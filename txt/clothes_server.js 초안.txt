@@ -1,0 +1,88 @@
+const express = require('express');
+const mysql = require('mysql2');
+const cors = require('cors');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// [추가] uploads 폴더가 없으면 자동으로 생성 (에러 방지)
+if (!fs.existsSync('uploads')) {
+    fs.mkdirSync('uploads');
+}
+
+// [추가] 외부에서 사진을 볼 수 있게 주소 개방
+// 이제 http://내IP:3000/uploads/사진이름 으로 사진 접근 가능
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// 1. 사진 저장 설정
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => { cb(null, 'uploads/'); },
+    filename: (req, file, cb) => { cb(null, Date.now() + '_' + file.originalname); }
+});
+const upload = multer({ storage: storage });
+
+// 2. MySQL 연결 설정
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: 'dnrwkd#dl2030', 
+    database: 'clothes_db'
+});
+
+// [체크 요소] DB 연결 확인 로직
+db.connect((err) => {
+    if (err) {
+        console.error('❌ DB 연결 실패!');
+        console.error('사유:', err.message);
+        console.log('힌트: MySQL이 켜져 있는지, 비번이 맞는지, clothes_db를 만드셨는지 확인하세요.');
+        return;
+    }
+    console.log('✅ MySQL 데이터베이스 연결 성공!');
+});
+
+// 3. [POST] 옷 등록 API
+app.post('/api/clothes', upload.single('image'), (req, res) => {
+    // 값이 안 들어올 경우를 대비한 기본값 처리 (에러 방지)
+    const { 
+        barcode_id, 
+        name, 
+        category = '미분류', 
+        thickness = 1, 
+        status = '보관', 
+        wash_date = null, 
+        memo = '' 
+    } = req.body;
+
+    const image_path = req.file ? `/uploads/${req.file.filename}` : null;
+
+    const sql = `INSERT INTO clothes 
+                (barcode_id, name, category, thickness, image_path, status, wash_date, memo) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+    
+    const params = [barcode_id, name, category, thickness, image_path, status, wash_date, memo];
+
+    db.query(sql, params, (err, result) => {
+        if (err) {
+            console.error('❌ DB 저장 에러:', err);
+            // 바코드 중복 에러(ER_DUP_ENTRY) 처리
+            if (err.code === 'ER_DUP_ENTRY') {
+                return res.status(400).json({ error: '이미 등록된 바코드입니다.' });
+            }
+            return res.status(500).json({ error: '저장 실패' });
+        }
+        console.log(`👕 등록 완료: ${name} (${barcode_id})`);
+        res.json({ success: true, message: '옷이 성공적으로 등록되었습니다!' });
+    });
+});
+
+// 4. [GET] 등록된 옷 목록 확인 API (테스트용)
+app.get('/api/clothes', (req, res) => {
+    db.query("SELECT * FROM clothes", (err, results) => {
+        if (err) return res.status(500).send(err);
+        res.json(results);
+    });
+});

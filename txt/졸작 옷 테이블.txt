@@ -1,0 +1,9 @@
+barcodeId VARCHAR(50) PRIMARY KEY, -- 바코드 고유 번호
+name VARCHAR(100) NOT NULL,          -- 옷 이름
+category VARCHAR(20),                	-- 옷 종류
+thickness INT,                       		-- 옷 두께(임의)1~5 단계
+imagePath VARCHAR(255),              	-- 사진 경로
+status VARCHAR(10) DEFAULT '보관',    	-- '보관', '세탁', '외출' 상태
+washDate DATE,                      		-- 세탁 날짜 (YYYY-MM-DD)
+memo TEXT,                           		-- 개별 메모
+location VARCHAR(50)                    --위치

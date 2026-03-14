@@ -1,0 +1,23 @@
+net start mysql80
+net stop mysql80
+
+nodemon clothes_server.js
+ngrok http 3000
+
+BASE_URL
+http://localhost:3000/
+
+옷 등록
+post
+/api/clothes
+
+메인 리스트용(barcodeId, name, imagePath)
+/api/clothes/main
+
+단일 옷 전체 정보(all)
+/api/clothes/detail/:barcodeId
+
+옷 삭제
+/api/clothes/delete/:barcodeId
+
+옷 정보 수정
