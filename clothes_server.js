@@ -17,6 +17,12 @@ if (!fs.existsSync('uploads')) {
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use(express.static(path.join(__dirname, 'html')));
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+
 //이미지 저장 설정
 const storage = multer.diskStorage({
     destination: (req, file, cb) => { cb(null, 'uploads/'); },
