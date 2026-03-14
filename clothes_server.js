@@ -154,6 +154,9 @@ app.delete('/api/clothes/delete/:barcodeId', (req, res) => {
 
 
 
-app.listen(3000, () => {
-    console.log('중계 서버가 3000번 포트에서 가동 중입니다.');
+const PORT = process.env.PORT || 3000;
+
+// '0.0.0.0'을 넣어줘야 외부 접속을 제대로 받아들입니다.
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server is running on port ${PORT}`);
 });
