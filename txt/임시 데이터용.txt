@@ -1,0 +1,29 @@
+const container = document.getElementById('clothesCardContainer');
+        document.getElementById('clothesCount').innerText = list.length;
+        container.innerHTML = '';
+        //이미지, 이름, 메모 포함 템플릿
+        list.forEach(c => {
+            const imgSrc = `${window.location.origin}${c.imagePath}`;;
+            const card = 
+            `
+                <div class="col-md-6 col-xl-4" id="card-${c.barcodeId}">
+                    <div class="card clothes-card">
+                        <div style="background-color: #f8f9fa; display: flex; align-items: center; justify-content: center; height: 200px; padding: 8px;">
+                            <img src="${imgSrc}" style="max-width: 100%; max-height: 100%; object-fit: contain;" alt="${c.name}">
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <span class="badge-status status-${c.status || '보관'}">${c.status || '보관'}</span>
+                            </div>
+                            <h5 class="card-title text-truncate">${c.name}</h5>
+                            <p class="memo-text text-truncate">${c.memo || '메모 없음'}</p>
+                            <div class="d-flex gap-2 mt-3">
+                                <button class="btn btn-sm btn-outline-primary w-100" onclick="viewDetail('${c.barcodeId}')">상세정보</button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteClothes('${c.barcodeId}')"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.innerHTML += card;
+        });

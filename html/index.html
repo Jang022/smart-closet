@@ -9,18 +9,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         /* 1. PC 버전에서 가져온 좌측 메뉴바 스타일 */
-        .sidebar { width: 250px; background: #1e293b; color: white; padding-top: 20px; display: flex; flex-direction: column; }
+        .sidebar { top:60px; width: 250px; height: 100vh; position: fixed; overflow-y: auto; z-index: 1000; background: #1e293b; color: white; padding-top: 20px; display: flex; flex-direction: column; }
         .sidebar-brand { font-size: 1.3rem; font-weight: bold; padding: 0 20px 20px; border-bottom: 1px solid #334155; color: #818cf8; }
         .sidebar-nav { flex-grow: 1; } 
         .nav-link { color: #cbd5e1; padding: 15px 20px; cursor: pointer; text-decoration: none; display: block; }
         .nav-link:hover { background: #334155; color: white; border-left: 4px solid #818cf8; }
         .sidebar-bottom { padding: 20px; }
-        .btn-cyan-pill { background-color: #20b2ff; color: white !important; font-weight: 900; border-radius: 50px; padding: 6px 16px; font-size: 0.8rem; text-decoration: none; display: inline-block; box-shadow: 0 3px 6px rgba(0,0,0,0.1); transition: 0.2s; }
+        /*.btn-cyan-pill { background-color: #20b2ff; color: white !important; font-weight: 900; border-radius: 50px; padding: 6px 16px; font-size: 0.8rem; text-decoration: none; display: inline-block; box-shadow: 0 3px 6px rgba(0,0,0,0.1); transition: 0.2s; }*/
         .btn-cyan-pill:hover { background-color: #009df0; transform: scale(1.05); }
 
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f1f5f9; }
+        body {font-family: 'Noto Sans KR', sans-serif; background-color: #f1f5f9; }
+        /*header*/
+        .app-header { position:fixed; top:0; left:0; width:100%; z-index: 1001; height:60px; background: #4f46e5; color: white; padding: 1rem 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        /*메인 위치 조정*/
+        .main-content {margin-top: 60px; margin-left: 250px; padding: 20px; box-sizing: border-box;}
 
-        .app-header { background: #4f46e5; color: white; padding: 1rem 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .closet-ui { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; background: #e2e8f0; padding: 10px; border-radius: 10px; }
         .closet-btn { background: white; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 4px; font-size: 0.75rem; transition: 0.2s; cursor: pointer; }
         .btn-check:checked + .closet-btn { background: #4f46e5; color: white; border-color: #4f46e5; }
@@ -40,12 +43,7 @@
             transform: translateY(-5px);
             box-shadow: 0 8px 15px rgba(0,0,0,0.1);
         }
-        .card-img-top {
-            width: 100%;
-            height: 180px;
-            object-fit: cover;
-            background-color: #f8fafc;
-        }
+        
         .card-body { padding: 1rem; }
         .card-title { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
         .card-location { font-size: 0.8rem; color: #6366f1; font-weight: 500; }
@@ -55,6 +53,25 @@
 
 <header class="app-header d-flex justify-content-between align-items-center">
     <h4 class="m-0"><i class="fas fa-tshirt"></i> Smart Closet</h4>
+    <!--검색, 분류-->
+    <div class="d-flex align-items-center gap-2">
+        <div class="input-group input-group-sm" style="width: 200px;">
+            <span class="input-group-text bg-secondary border-secondary text-white">
+                <i class="fas fa-search"></i>
+            </span>
+            <input type="text" id="searchInput" class="form-control" placeholder="검색..." onkeyup="filterClothes()">
+        </div>
+
+        <select id="sortSelect" class="form-select form-select-sm" onchange="filterClothes()" style="width: 110px;">
+            <!--카테고리별 분류, 추후 추가-->
+            <option value="all">전체</option>
+            <option value="아우터">아우터</option>
+            <option value="상의">상의</option>
+            <option value="하의">하의</option>
+            <option value="기타">기타</option>
+        </select>
+    </div>
+
 </header>
 <div class="main-wrapper d-flex">
     <div class="sidebar">
@@ -69,7 +86,7 @@
 
     
     <div class="container-fluid p-4">
-        <div class="row">
+        <div class="main-content">
             <!--옷 목록 카드-->
             <div class="col-lg-12">
                 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -85,75 +102,135 @@
 
     <!--옷 등록-->
     <div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-light">
-                <h5 class="modal-title fw-bold" id="registerModalLabel">새 옷 등록</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <form id="clothesForm">
-                    <label class="form-label small fw-bold">바코드</label>
-                    <input type="text" class="form-control mb-3 rounded-pill" id="barcode" placeholder="바코드를 스캔하세요" autofocus required>
-                    
-                    <label class="form-label small fw-bold">옷 이름</label>
-                    <input type="text" class="form-control mb-3" id="clothesName" placeholder="예: 화이트 셔츠" required>
-                    
-                    <label class="form-label small fw-bold">사진</label>
-                    <input type="file" class="form-control mb-3" id="imageFile" accept="image/*">
-                    
-                    <label class="form-label small fw-bold">메모</label>
-                    <textarea class="form-control mb-3" id="memo" rows="2" placeholder="주의사항 등을 입력하세요"></textarea>
-                    
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">카테고리</label>
-                            <select class="form-select" id="category">
-                                <option value="상의">상의</option>
-                                <option value="하의">하의</option>
-                                <option value="아우터">아우터</option>
-                                <option value="기타">기타</option>
-                            </select>
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-bold" id="registerModalLabel">새 옷 등록</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="clothesForm">
+                        <label class="form-label small fw-bold">바코드</label>
+                        <input type="text" class="form-control mb-3 rounded-pill" id="barcode" placeholder="바코드를 스캔하세요" autofocus required>
+                        
+                        <label class="form-label small fw-bold">옷 이름</label>
+                        <input type="text" class="form-control mb-3" id="clothesName" placeholder="예: 화이트 셔츠" required>
+                        
+                        <label class="form-label small fw-bold">사진</label>
+                        <input type="file" class="form-control mb-3" id="imageFile" accept="image/*">
+                        
+                        <label class="form-label small fw-bold">메모</label>
+                        <textarea class="form-control mb-3" id="memo" rows="2" placeholder="주의사항 등을 입력하세요"></textarea>
+                        
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label small fw-bold">카테고리</label>
+                                <select class="form-select" id="category">
+                                    <option value="상의">상의</option>
+                                    <option value="하의">하의</option>
+                                    <option value="아우터">아우터</option>
+                                    <option value="기타">기타</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-bold">두께감</label>
+                                <input type="range" class="form-range mt-2" min="1" max="5" id="thickness" value="3">
+                            </div>
                         </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">두께감</label>
-                            <input type="range" class="form-range mt-2" min="1" max="5" id="thickness" value="3">
-                        </div>
-                    </div>
 
-                    <label class="form-label small fw-bold mb-2">보관 위치</label>
-                    <div class="closet-ui mb-4">
-                        <div class="closet-col">
-                            <input type="radio" class="btn-check" name="location" id="L1" value="좌측 상단"><label class="closet-btn" for="L1">좌측 상단</label>
-                            <input type="radio" class="btn-check" name="location" id="L2" value="좌측 하단"><label class="closet-btn" for="L2">좌측 하단</label>
+                        <label class="form-label small fw-bold mb-2">보관 위치</label>
+                        <div class="closet-ui mb-4">
+                            <div class="closet-col">
+                                <input type="radio" class="btn-check" name="location" id="L1" value="좌측 상단"><label class="closet-btn" for="L1">좌측 상단</label>
+                                <input type="radio" class="btn-check" name="location" id="L2" value="좌측 하단"><label class="closet-btn" for="L2">좌측 하단</label>
+                            </div>
+                            <div class="closet-col">
+                                <input type="radio" class="btn-check" name="location" id="C1" value="중앙 구역"><label class="closet-btn" for="C1">중앙 구역</label>
+                            </div>
+                            <div class="closet-col">
+                                <input type="radio" class="btn-check" name="location" id="R1" value="우측 1단"><label class="closet-btn" for="R1">우측 1단</label>
+                                <input type="radio" class="btn-check" name="location" id="R2" value="우측 2단"><label class="closet-btn" for="R2">우측 2단</label>
+                            </div>
                         </div>
-                        <div class="closet-col">
-                            <input type="radio" class="btn-check" name="location" id="C1" value="중앙 구역"><label class="closet-btn" for="C1">중앙 구역</label>
-                        </div>
-                        <div class="closet-col">
-                            <input type="radio" class="btn-check" name="location" id="R1" value="우측 1단"><label class="closet-btn" for="R1">우측 1단</label>
-                            <input type="radio" class="btn-check" name="location" id="R2" value="우측 2단"><label class="closet-btn" for="R2">우측 2단</label>
-                        </div>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary w-100 fw-bold py-2">등록 완료</button>
-                </form>
+                        
+                        <button type="submit" class="btn btn-primary w-100 fw-bold py-2">등록 완료</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
+
+
+    <!--옷 상세정보-->
+    <div class="modal fade" id="detailModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-bold">옷 상세 정보</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!--등록된 옷 이미지-->
+                    <div class="text-center mb-4" style="background: #f8fafc; border-radius: 10px; padding: 10px;">
+                        <img id="viewImage" src="" alt="옷 이미지" style="max-width: 100%; max-height: 250px; object-fit: contain; border-radius: 8px;">
+                    </div>
+                    <!--상세정보 표기 텍스트-->
+                    <form id="detailForm">
+                        <label class="form-label small fw-bold">바코드</label>
+                        <input type="text" class="form-control mb-3" id="viewBarcode" readonly>
+                        
+                        <label class="form-label small fw-bold">옷 이름</label>
+                        <input type="text" class="form-control mb-3" id="viewName" readonly>
+                        
+                        <label class="form-label small fw-bold">카테고리</label>
+                        <select class="form-select mb-3" id="viewCategory" disabled>
+                            <option value="상의">상의</option>
+                            <option value="하의">하의</option>
+                            <option value="아우터">아우터</option>
+                            <option value="기타">기타</option>
+                        </select>
+                        
+                        <label class="form-label small fw-bold mb-2">보관 위치</label>
+                        <div class="closet-ui mb-4">
+                            <div class="closet-col">
+                                <input type="radio" class="btn-check" name="editLocation" id="editL1" value="좌측 상단"><label class="closet-btn" for="editL1">좌측 상단</label>
+                                <input type="radio" class="btn-check" name="editLocation" id="editL2" value="좌측 하단"><label class="closet-btn" for="editL2">좌측 하단</label>
+                            </div>
+                            <div class="closet-col">
+                                <input type="radio" class="btn-check" name="editLocation" id="editC1" value="중앙 구역"><label class="closet-btn" for="editC1">중앙 구역</label>
+                            </div>
+                            <div class="closet-col">
+                                <input type="radio" class="btn-check" name="editLocation" id="editR1" value="우측 1단"><label class="closet-btn" for="editR1">우측 1단</label>
+                                <input type="radio" class="btn-check" name="editLocation" id="editR2" value="우측 2단"><label class="closet-btn" for="editR2">우측 2단</label>
+                            </div>
+                        </div>
+
+                        <label class="form-label small fw-bold">마지막 세탁일</label>
+                        <input type="text" class="form-control mb-3" id="viewLastWashDate" readonly>
+
+                        <label class="form-label small fw-bold">메모</label>
+                        <textarea class="form-control mb-3" id="viewMemo" rows="3" readonly></textarea>
+                    </form>
+                    <div class="modal-footer">
+                        <button type="button" id="btnEdit" class="btn btn-outline-primary" onclick="enableEditMode()">수정하기</button>
+                        <button type="button" id="btnSave" class="btn btn-success d-none" onclick="saveUpdate()">저장하기</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
 
 
 </div>
 <script>
     //기본 URL
-    //const API_URL = 'http://localhost:3000/api/clothes';
     const API_URL = `${window.location.origin}/api/clothes`;
-    //메인 옷 리스트 나열
-    async function loadClothes() {
-        const res = await fetch(`${API_URL}/main`);
-        const list = await res.json();
-        
+    //전체 옷 데이터 저장
+    let allClothes = [];
+
+    function renderClothes(list){
         const container = document.getElementById('clothesCardContainer');
         document.getElementById('clothesCount').innerText = list.length;
         container.innerHTML = '';
@@ -183,31 +260,40 @@
             `;
             container.innerHTML += card;
         });
+
     }
-    //서버에서 중복처리->필요 없음
-    async function findAndHighlight(bid) {
-        document.querySelectorAll('tr').forEach(t => t.style.backgroundColor = '');
-        document.querySelectorAll('.closet-btn').forEach(b => b.style.boxShadow = '');
-        const res = await fetch(`${API_URL}/detail/${id}`);
-        const list = await res.json();
-        const target = list.find(c => c.barcodeId === bid);
-        if (target) {
-            const r = document.getElementById(`row-${bid}`);
-            if (r) { r.style.backgroundColor = '#fef9c3'; r.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-            document.querySelectorAll('.closet-btn').forEach(b => {
-                if (b.innerText === target.location) b.style.boxShadow = '0 0 15px #4f46e5';
-            });
-            return true;
-        }
-        return false;
+
+    //메인 옷 리스트 나열
+    async function loadClothes() {
+        const res = await fetch(`${API_URL}/main`);
+        allClothes = await res.json();
+        renderClothes(allClothes);
     }
+
+    //검색, 분류 기능용 나열
+    function filterClothes() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const selectedCategory = document.getElementById('sortSelect').value;
+
+        const filtered = allClothes.filter(item => {
+            // 1. 카테고리 일치 확인 (전체이거나 값이 같거나)
+            const isCategoryMatch = (selectedCategory === 'all' || item.category === selectedCategory);
+            
+            // 2. 검색어 포함 확인 (이름 또는 메모)
+            const isSearchMatch = item.name.toLowerCase().includes(searchTerm) || 
+                                (item.memo && item.memo.toLowerCase().includes(searchTerm));
+
+            return isCategoryMatch && isSearchMatch;
+        });
+
+        renderClothes(filtered); // 필터링된 결과만 다시 그리기
+    }
+
+
 
     //옷 등록 이벤트
     document.getElementById('clothesForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        //현재 서버에서 바코드 중복 처리 중
-        //const bid = document.getElementById('barcode').value;
-        //if (await findAndHighlight(bid)) return;
 
         const formData = new FormData();
         formData.append('barcodeId', document.getElementById('barcode').value);
@@ -276,12 +362,127 @@
         }
     } }
 
+    //옷 상세정보
+    async function viewDetail(id) {
+        try {
+            // 1. 상세정보 API 호출 (이미 있다고 하신 것 활용)
+            const res = await fetch(`${API_URL}/detail/${id}`); 
+            const data = await res.json();
+        
+            // 데이터가 배열로 온다면 첫 번째 요소 선택 (list[0])
+            const item = Array.isArray(data) ? data[0] : data;
 
-    //세탁일-나중에 바코드 인식 기능 넣고 바코드 인식마다 세탁일 업데이트할 것
-    async function markAsWashed(id) { await fetch(`${API_URL}/${id}/wash`, {method:'PUT'}); loadClothes(); }
-    //수정?
-    async function updateStatus(id, s) { await fetch(`${API_URL}/${id}/status?status=${s}`, {method:'PUT'}); loadClothes(); }
+            if (item) {
+                // 2. 입력 폼 위치에 정보 넣기
+                document.getElementById('viewImage').src = `${window.location.origin}${item.imagePath}`;
+                document.getElementById('viewBarcode').value = item.barcodeId || '';
+                document.getElementById('viewName').value = item.name || '';
+                document.getElementById('viewCategory').value = item.category;
+                document.getElementById('viewLastWashDate').value = item.washDate;
+                document.getElementById('viewMemo').value = item.memo || '메모 없음';
+                //보관 위치 라디오 버튼
+                const locationRadios = document.getElementsByName('editLocation');
+                locationRadios.forEach(radio => {
+                    if (radio.value === item.location) {
+                        radio.checked = true;
+                    } else {
+                        radio.checked = false;
+                    }
+                });
+                locationRadios.forEach(radio => radio.disabled = true);
+                // 3. 부트스트랩 모달 띄우기
+                const detailModal = new bootstrap.Modal(document.getElementById('detailModal'));
+                detailModal.show();
+            } else {
+            alert("정보를 찾을 수 없습니다.");
+            }
+        } catch (error) {
+        console.error("상세정보 로드 실패:", error);
+        }
+    }
 
+    //비활성화된 입력창 활성화
+    function enableEditMode() {
+        document.getElementById('viewName').readOnly = false;
+        document.getElementById('viewMemo').readOnly = false;
+        console.log("2. 텍스트/카테고리 해제 완료");
+
+        // 카테고리 선택 상자 활성화
+        document.getElementById('viewCategory').disabled = false;
+
+        // 라디오 버튼 활성화
+        const locationAct = document.getElementsByName('editLocation');
+        console.log("찾은 버튼 개수:", locationAct.length);
+            locationAct.forEach(radio => {radio.disabled = false; 
+            radio.dispatchEvent(new Event('change'));
+        });
+
+        document.getElementById('btnEdit').classList.add('d-none');
+        document.getElementById('btnSave').classList.remove('d-none');
+    }
+
+    //저장 후 다시 상세정보창 원복
+    function disableEditMode() {
+        // 입력창 다시 잠그기
+        document.getElementById('viewName').readOnly = true;
+        document.getElementById('viewMemo').readOnly = true;
+        document.getElementById('viewCategory').disabled = true;
+        
+        const locationRadios = document.getElementsByName('editLocation');
+        locationRadios.forEach(radio => radio.disabled = true);
+
+        // 버튼 스왑 (저장 숨기고 수정 보이기)
+        document.getElementById('btnEdit').classList.remove('d-none');
+        document.getElementById('btnSave').classList.add('d-none');
+        
+        // 스타일 복구
+        document.getElementById('viewName').style.backgroundColor = "transparent";
+    }
+
+
+
+    //수정된 정보 저장(저장버튼 누를 시 시행)
+    async function saveUpdate() {
+        const id = document.getElementById('viewBarcode').value;
+        const selectedLoc = document.querySelector('input[name="editLocation"]:checked');
+        
+        const updatedData = {
+            name: document.getElementById('viewName').value,
+            memo: document.getElementById('viewMemo').value,
+            // 선택된 카테고리 값 가져오기
+            category: document.getElementById('viewCategory').value,
+            location: selectedLoc ? selectedLoc.value : ''
+        };
+
+        const response = await fetch(`${API_URL}/update/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedData)
+        });
+
+        if (response.ok) {
+            // 알림창 (Swal이 없어도 에러 안 나게 처리)
+            if (window.Swal) {
+                await Swal.fire({ title: '수정 완료', icon: 'success', timer: 800, showConfirmButton: false });
+            } else {
+                alert("수정 완료");
+            }
+
+            disableEditMode();
+            loadClothes();
+        }
+
+    }
+
+
+
+    // 수정 중 창이 꺼지면 리셋
+    document.getElementById('detailModal').addEventListener('hidden.bs.modal', function () {
+        console.log("모달 닫힘: 수정 모드 초기화");
+        disableEditMode(); 
+    });
+
+    //옷 목록 로드
     loadClothes();
 </script>
 

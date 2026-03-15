@@ -21,3 +21,4 @@ post
 /api/clothes/delete/:barcodeId
 
 옷 정보 수정
+/api/clothes/update/:barcodeId

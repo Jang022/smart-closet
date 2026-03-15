@@ -17,7 +17,7 @@ if (!fs.existsSync('uploads')) {
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use(express.static(path.join(__dirname, 'html')));
-
+//메인 페이지 라우팅
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
@@ -83,9 +83,9 @@ app.post('/api/clothes', upload.single('image'), (req, res) => {
     });
 });
 
-//메인 페이지용 API: 바코드, 이름, 이미지, 메모
+//메인 페이지용: 바코드, 이름, 이미지, 메모, 카테고리
 app.get('/api/clothes/main', (req, res) => {
-    const sql = "SELECT barcodeId, name, imagePath, memo FROM clothes ORDER BY barcodeId DESC";
+    const sql = "SELECT barcodeId, name, imagePath, category, memo FROM clothes ORDER BY barcodeId DESC";
     
     db.query(sql, (err, results) => {
         if (err) {
@@ -97,6 +97,7 @@ app.get('/api/clothes/main', (req, res) => {
             barcodeId: item.barcodeId,
             name: item.name,
             imagePath: item.imagePath ? item.imagePath : '/uploads/default_clothes.jpg',
+            category: item.category,
             memo: item.memo
         }));
 
@@ -109,7 +110,7 @@ app.get('/api/clothes/main', (req, res) => {
 app.get('/api/clothes/detail/:barcodeId', (req, res) => {
     const { barcodeId } = req.params;
     //해당 바코드의 모든 정보 조회
-    const sql = 'SELECT barcodeId, name, category, thickness, imagePath, status, DATE_FORMAT(washDate, "%Y/%m/%d") AS washDate, memo FROM clothes WHERE barcodeId = ?';
+    const sql = 'SELECT barcodeId, name, category, thickness, imagePath, status, DATE_FORMAT(washDate, "%Y/%m/%d") AS washDate, memo, location FROM clothes WHERE barcodeId = ?';
 
     db.query(sql, [barcodeId], (err, results) => {
         if (err) {
@@ -153,16 +154,27 @@ app.delete('/api/clothes/delete/:barcodeId', (req, res) => {
 });
 
 //옷 수정
+app.put('/api/clothes/update/:barcodeId', (req, res) =>{
+    const { name, category, memo, location } = req.body;
+    const {barcodeId} = req.params;
+
+    const sql = "UPDATE clothes SET name = ?, category = ?, memo = ?, location= ? WHERE barcodeId = ?";
+
+    db.query(sql, [name, category, memo, location, barcodeId], (err, result) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('DB 수정 오류');
+        }
+        res.send({ message: '수정 성공' });
+    });
+});
 
 
 
 
 
-
-
+//포트 체크
 const PORT = process.env.PORT || 3000;
-
-// '0.0.0.0'을 넣어줘야 외부 접속을 제대로 받아들입니다.
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT}`);
 });
